@@ -56,7 +56,7 @@ public class FuncionService {
         return derivada;
     }
 
-    public double[][] buscarPuntosCriticos(Funcion funcion, double inicio, double fin) {
+    public double[][] evaluarFuncion(Funcion funcion, double inicio, double fin) {
         List<Double> puntosx = new ArrayList<>();
         puntosx.add(inicio);
         for (double x = -20; x <= 20; x++) {
@@ -80,13 +80,15 @@ public class FuncionService {
             puntoscriticosev[i][1] = fx;
         }
         maxMin(funcion);
+        intervalos(funcion);
         funcion.setPuntoscriticos(puntoscriticosev);
         return puntoscriticosev;
     }
 
     private double[][] maxMin(Funcion funcion) {
         double[][] puntoscriticos = funcion.getPuntoscriticos();
-        if (puntoscriticos.length == 0) return new double[0][0];
+        if (puntoscriticos.length == 0)
+            return new double[0][0];
         double xMax = puntoscriticos[0][0];
         double yMax = puntoscriticos[0][1];
         double xMin = puntoscriticos[0][0];
@@ -109,9 +111,40 @@ public class FuncionService {
         return maxmin;
     }
 
-    public double[][] intervalos(Funcion funcion) {
-        return null;
-
+    private List<String> intervalos(Funcion funcion) {
+        List<String> intervalos = new ArrayList<>();
+        double[] puntoscriticos = new double[funcion.getPuntoscriticos().length - 2];
+        for (int i = 1; i < puntoscriticos.length - 1; i++) {
+            puntoscriticos[i] = funcion.getPuntoscriticos()[i][0];
+        }
+        List<Double> limites = new ArrayList<>();
+        limites.add(Double.NEGATIVE_INFINITY);
+        for (double p : puntoscriticos) {
+            limites.add(p);
+        }
+        limites.add(Double.POSITIVE_INFINITY);
+        double a;
+        double b;
+        double puntoPrueba;
+        for (int i = 0; i < limites.size() - 1; i++) {
+            a = limites.get(i);
+            b = limites.get(i + 1);
+            if (Double.isInfinite(a)) {
+                puntoPrueba = b - 1;
+            } else if (Double.isInfinite(b)) {
+                puntoPrueba = a + 1;
+            } else {
+                puntoPrueba = (a + b) / 2.0;
+            }
+            double valor = eval.evaluate(funcion.getDerivada().replace("x", String.valueOf(puntoPrueba)));
+            String tipo = valor > 0 ? "Creciente" : valor < 0 ? "Decreciente" : "Crítico";
+            String lima = Double.isInfinite(a) ? "−∞" : String.format("%.2f", a);
+            String limb = Double.isInfinite(b) ? "∞" : String.format("%.2f", b);
+            String intervalotexto = String.format("(%s, %s) → %s", lima, limb, tipo);
+            intervalos.add(intervalotexto);
+        }
+        funcion.setIntervalos(intervalos);
+        return intervalos;
     }
 
 }

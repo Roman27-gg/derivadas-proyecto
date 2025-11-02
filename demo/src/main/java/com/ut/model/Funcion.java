@@ -1,5 +1,6 @@
 package com.ut.model;
 
+import java.util.List;
 
 public class Funcion {
     private String expresion;
@@ -7,7 +8,7 @@ public class Funcion {
     private String derivada;
     private double[][] puntoscriticos;
     private double[][] maxMin;
-    private double[][] intervalos;
+    private List<String> intervalos;
 
     public Funcion(String expresion) {
         this.expresion = expresion;
@@ -45,14 +46,6 @@ public class Funcion {
         this.puntoscriticos = puntoscriticos;
     }
 
-    public double[][] getIntervalos() {
-        return intervalos;
-    }
-
-    public void setIntervalos(double[][] intervalos) {
-        this.intervalos = intervalos;
-    }
-
     public double[][] getMaxMin() {
         return maxMin;
     }
@@ -60,4 +53,14 @@ public class Funcion {
     public void setMaxMin(double[][] maxMin) {
         this.maxMin = maxMin;
     }
+
+    public List<String> getIntervalos() {
+        return intervalos;
+    }
+
+    public void setIntervalos(List<String> intervalos) {
+        this.intervalos = intervalos;
+    }
+
+    
 }
