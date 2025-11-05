@@ -7,7 +7,10 @@ import org.jfree.data.xy.*;
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import java.math.BigDecimal;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.matheclipse.core.eval.ExprEvaluator;
 import org.matheclipse.parser.client.eval.DoubleEvaluator;
 
 import com.ut.model.Funcion;
@@ -28,10 +31,15 @@ public class GraficaService {
         if (!expr.contains("/")) {
             return false;
         }
+        double y;
         try {
             for (double x = -20; x <= 20; x += 0.1) {
-                String exprReemplazada = reemplazarX(expr, x);
-                double y = eval.evaluate(exprReemplazada);
+                if (contieneTrigonometrica(expr)) {
+                    y = evaluarRazonesTrigonometricas(expr, x);
+                } else {
+                    String exprReemplazada = reemplazarX(expr, x);
+                    y = eval.evaluate(exprReemplazada);
+                }
                 if (x == 0) {
                     System.out.println(y);
                 }
@@ -46,10 +54,15 @@ public class GraficaService {
 
     private ChartPanel graficarPanel(Funcion funcion) {
         XYSeries serieFuncion = new XYSeries("f(x)");
+        double y;
         for (double x = -20; x <= 20; x += 0.5) {
             try {
-                String exprreemplazada = reemplazarX(funcion.getExpresion(), x);
-                double y = eval.evaluate(exprreemplazada);
+                if (contieneTrigonometrica(funcion.getExpresion())) {
+                    y = evaluarRazonesTrigonometricas(funcion.getExpresion(), x);
+                } else {
+                    String exprReemplazada = reemplazarX(funcion.getExpresion(), x);
+                    y = eval.evaluate(exprReemplazada);
+                }
                 if (!Double.isNaN(y) && !Double.isInfinite(y)) {
                     serieFuncion.add(x, y);
                 }
@@ -57,7 +70,12 @@ public class GraficaService {
                 continue;
             }
         }
-        serieFuncion.add(0, eval.evaluate(funcion.getExpresion().replace("x", "(0)")));
+        if (contieneTrigonometrica(funcion.getExpresion())) {
+            serieFuncion.add(0, evaluarRazonesTrigonometricas(funcion.getExpresion(), 0));
+        } else {
+            serieFuncion.add(0, eval.evaluate(funcion.getExpresion().replace("x", "(0)")));
+
+        }
         XYSeriesCollection dataset = new XYSeriesCollection();
         dataset.addSeries(serieFuncion);
         double[][] puntosCriticos = funcion.getPuntoscriticos();
@@ -93,12 +111,15 @@ public class GraficaService {
         int contadorSeries = 1;
         XYSeries serieFuncion = new XYSeries("f(x) - parte " + contadorSeries);
         double limite = 1e6;
-
+        double y;
         for (double x = -20; x <= 20; x += 0.05) {
             try {
-                String expr = reemplazarX(funcion.getExpresion(), x);
-                double y = eval.evaluate(expr);
-
+                if (contieneTrigonometrica(funcion.getExpresion())) {
+                    y = evaluarRazonesTrigonometricas(funcion.getExpresion(), x);
+                } else {
+                    String expr = reemplazarX(funcion.getExpresion(), x);
+                    y = eval.evaluate(expr);
+                }
                 if (Double.isFinite(y) && Math.abs(y) < limite) {
                     serieFuncion.add(x, y);
                 } else {
@@ -194,6 +215,32 @@ public class GraficaService {
         expr = expr.replaceAll("(\\))(\\()", ")*(");
         expr = expr.replaceAll("\\bx\\b", valor);
         return expr;
+    }
+
+    private double evaluarRazonesTrigonometricas(String expr, double x) {
+        ExprEvaluator evaluator = new ExprEvaluator();
+        String value = evaluator.eval(reemplazarXPorValor(expr, x)).toString();
+        return Double.parseDouble(value);
+    }
+
+    private boolean contieneTrigonometrica(String expresion) {
+        Pattern pattern = Pattern.compile("(?i)\\b(sin|cos|tan|sec|csc|cot|asin|acos|atan)\\s*\\(");
+        Matcher matcher = pattern.matcher(expresion);
+        return matcher.find();
+    }
+
+    private String reemplazarXPorValor(String expresion, double valorX) {
+        String valorStr = String.valueOf(valorX);
+        return expresion.replaceAll("\\bx\\b", valorStr)
+                .replaceAll("sin\\(", "Sin(")
+                .replaceAll("cos\\(", "Cos(")
+                .replaceAll("tan\\(", "Tan(")
+                .replaceAll("sec\\(", "Sec(")
+                .replaceAll("csc\\(", "Csc(")
+                .replaceAll("cot\\(", "Cot(")
+                .replaceAll("asin\\(", "ArcSin(")
+                .replaceAll("acos\\(", "ArcCos(")
+                .replaceAll("atan\\(", "ArcTan(");
     }
 
 }

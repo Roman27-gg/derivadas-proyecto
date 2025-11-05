@@ -63,10 +63,16 @@ public class FuncionService {
 
     public double[][] evaluarFuncion(Funcion funcion, double inicio, double fin) {
         List<Double> puntosx = new ArrayList<>();
+        double valor;
         puntosx.add(inicio);
-        for (double x = -20; x <= 20; x++) {
+        for (double x = -20; x <= 20; x+=0.5)
+         {
             try {
-                double valor = eval.evaluate(funcion.getDerivada().replace("x", String.valueOf(x)));
+                if (contieneTrigonometrica(funcion.getDerivada())) {
+                    valor = evaluarRazonesTrigonometricas(funcion.getDerivada(), x);
+                } else {
+                    valor = eval.evaluate(funcion.getDerivada().replace("x", String.valueOf(x)));
+                }
                 if (Math.abs(valor) < 0.001 && inicio < x && x < fin) {
                     puntosx.add(x);
                 }
@@ -78,9 +84,14 @@ public class FuncionService {
         }
         puntosx.add(fin);
         double[][] puntoscriticosev = new double[puntosx.size()][2];
+        double fx;
         for (int i = 0; i < puntosx.size(); i++) {
             double x = puntosx.get(i);
-            double fx = eval.evaluate(funcion.getExpresion().replace("x", String.valueOf(x)));
+            if (contieneTrigonometrica(funcion.getExpresion())) {
+                fx = evaluarRazonesTrigonometricas(funcion.getExpresion(), x);
+            } else {
+                fx = eval.evaluate(funcion.getExpresion().replace("x", String.valueOf(x)));
+            }
             puntoscriticosev[i][0] = x;
             puntoscriticosev[i][1] = fx;
         }
@@ -137,16 +148,33 @@ public class FuncionService {
             b = limites.get(i + 1);
             if (Double.isInfinite(a)) {
                 puntoPrueba = b - 5;
-                valorb = eval.evaluate(funcion.getExpresion().replace("x", String.valueOf(b)));
+                if (contieneTrigonometrica(funcion.getExpresion())) {
+                    valorb = evaluarRazonesTrigonometricas(funcion.getExpresion(), b);
+                } else {
+                    valorb = eval.evaluate(funcion.getExpresion().replace("x", String.valueOf(b)));
+                }
             } else if (Double.isInfinite(b)) {
                 puntoPrueba = a;
-                valorb = eval.evaluate(funcion.getExpresion().replace("x", String.valueOf(a+5)));
+                if (contieneTrigonometrica(funcion.getExpresion())) {
+                    valorb = evaluarRazonesTrigonometricas(funcion.getExpresion(), a + 5);
+                } else {
+                    valorb = eval.evaluate(funcion.getExpresion().replace("x", String.valueOf(a + 5)));
+                }
             } else {
                 puntoPrueba = a;
-                valorb = eval.evaluate(funcion.getExpresion().replace("x", String.valueOf(b)));
+                if (contieneTrigonometrica(funcion.getExpresion())) {
+                    valorb = evaluarRazonesTrigonometricas(funcion.getExpresion(), b);
+                } else {
+                    valorb = eval.evaluate(funcion.getExpresion().replace("x", String.valueOf(b)));
+                }
             }
-            double valor = eval.evaluate(funcion.getExpresion().replace("x", String.valueOf(puntoPrueba)));
-            String tipo =  valor < valorb ? "Creciente" : valorb < valor  ? "Decreciente" : "Crítico";
+            double valor;
+            if (contieneTrigonometrica(funcion.getExpresion())) {
+                valor = evaluarRazonesTrigonometricas(funcion.getExpresion(), puntoPrueba);
+            } else {
+                valor = eval.evaluate(funcion.getExpresion().replace("x", String.valueOf(puntoPrueba)));
+            }
+            String tipo = valor < valorb ? "Creciente" : valorb < valor ? "Decreciente" : "Crítico";
             String lima = Double.isInfinite(a) ? "−∞" : String.format("%.2f", a);
             String limb = Double.isInfinite(b) ? "∞" : String.format("%.2f", b);
             String intervalotexto = String.format("(%s, %s) → %s", lima, limb, tipo);
@@ -155,4 +183,33 @@ public class FuncionService {
         funcion.setIntervalos(intervalos);
         return intervalos;
     }
+
+    private double evaluarRazonesTrigonometricas(String expr, double x) {
+        ExprEvaluator evaluator = new ExprEvaluator();
+        String value = evaluator.eval(reemplazarXPorValor(expr, x)).toString();
+        return Double.parseDouble(value);
+    }
+
+    private boolean contieneTrigonometrica(String expresion) {
+        Pattern pattern = Pattern.compile("(?i)\\b(sin|cos|tan|sec|csc|cot|asin|acos|atan)\\s*\\(");
+        Matcher matcher = pattern.matcher(expresion);
+        return matcher.find();
+    }
+
+    private String reemplazarXPorValor(String expresion, double valorX) {
+        String valorStr = String.valueOf(valorX);
+        return expresion.replaceAll("\\bx\\b", valorStr)
+                .replaceAll("sin\\(", "Sin(")
+                .replaceAll("cos\\(", "Cos(")
+                .replaceAll("tan\\(", "Tan(")
+                .replaceAll("sec\\(", "Sec(")
+                .replaceAll("csc\\(", "Csc(")
+                .replaceAll("cot\\(", "Cot(")
+                .replaceAll("asin\\(", "ArcSin(")
+                .replaceAll("acos\\(", "ArcCos(")
+                .replaceAll("atan\\(", "ArcTan(");
+    }
+
+    
+
 }
