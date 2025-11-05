@@ -36,7 +36,7 @@ public class ControllerApp {
             funcionService = new FuncionService(funcion);
             funcionService.derivar(funcion);
             funcionService.evaluarFuncion(funcion, inicio, fin);
-            ChartPanel panel = graficaService.graficarPanel(funcion);
+            ChartPanel panel = graficaService.graficar(funcion);
             StringBuilder sb = new StringBuilder();
             sb.append("Función: ").append(funcion.getExpresion()).append("\n");
             sb.append("Derivada: ").append(funcion.getDerivada()).append("\n\n");
